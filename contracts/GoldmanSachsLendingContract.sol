@@ -75,7 +75,7 @@ contract GoldmanSachsLendingContract {
 		loanRequestInfo.USDCTokenAddress.transferFrom(msg.sender, lender, loanBalance());
 		loanApplicationStatus = LoanStatus.PAYED;
 		GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).updateCollateralStatus(loanRequestInfo.tokenId, false);
-		GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).approve(borrower, loanRequestInfo.tokenId);
+		GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).approve(address(0x0), loanRequestInfo.tokenId);
 	}
 
 	function initiateLiquidation() public payable{
