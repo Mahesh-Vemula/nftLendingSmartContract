@@ -19,6 +19,8 @@ contract GoldmanSachsLendingContract {
 	LoanStatus loanApplicationStatus;
 	address payable public lender;
 	address payable public borrower;
+	uint loadDisburedDate;
+
 
 	constructor (address nftTokenAddress,
 		uint256 tokenId,
@@ -46,7 +48,16 @@ contract GoldmanSachsLendingContract {
 		borrower = payable( GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).ownerOf(loanRequestInfo.tokenId));
 		borrower.transfer(loanRequestInfo.loanAmount);
 		loanApplicationStatus = LoanStatus.DISBURSED;
-	} 
+		loadDisburedDate = now;
+	}
+
+	function loanBalance() public view returns (uint256){
+		uint256 timeToCalculateInterestFor =  block.timestamp - loadDisburedDate;
+		uint256 noOfDays = timeToCalculateInterestFor / (60*60*24);
+		uint256 interest = noOfDays * (loanRequestInfo.interestRate / (100 * 365) );
+		uint256 payOffBalance = interest + loanRequestInfo.loanAmount;
+		return payOffBalance;
+	}
 
 	function payLoanDue() public {
 
