@@ -59,12 +59,18 @@ contract GoldmanSachsLendingContract {
 		return payOffBalance;
 	}
 
-	function payLoanDue() public {
-
+	function payLoanDue() public payable{
+		require(msg.value <= loanBalance());
+		loanApplicationStatus = LoanStatus.PAYED;
+		//To do - update NFT collateral
 	}
 
-	function initiateLiquidation() public {
-
+	function initiateLiquidation() public payable{
+		uint256 timeToCalculateInterestFor =  block.timestamp - loadDisburedDate;
+		uint256 noOfDays = timeToCalculateInterestFor / (60*60*24);
+		require(noOfDays > loanRequestInfo.loanDuration);
+		require(msg.value <= loanBalance());
+		//To do - transfer NFT ownership
 	}
 
 	function getBalanceOfContract() public view returns (uint256){
