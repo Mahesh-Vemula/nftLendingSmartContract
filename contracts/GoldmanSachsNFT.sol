@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
@@ -27,16 +28,16 @@ contract GoldmanSachsNFT is ERC721 {
 	}
 	
 	function isUnderCollateral(uint256 tokenId) public view returns (bool) {
-	    return nftCollateralStatus[tokenId];
+		return nftCollateralStatus[tokenId];
 	}
 	
 	function updateCollateralStatus(uint256 tokenId, bool status) public returns (string memory){
-	    nftCollateralStatus[tokenId] = status;
-	    if(nftCollateralStatus[tokenId] == status){
-	        return "Success";
-	    }else{
-	        return "Failed to update status";
-	    }
+		nftCollateralStatus[tokenId] = status;
+		if(nftCollateralStatus[tokenId] == status){
+			return "Success";
+		}else{
+			return "Failed to update status";
+		}
 	}
 
 }
