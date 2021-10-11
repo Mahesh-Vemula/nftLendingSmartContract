@@ -48,7 +48,7 @@ contract GoldmanSachsLendingContract {
 		borrower = payable( GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).ownerOf(loanRequestInfo.tokenId));
 		borrower.transfer(loanRequestInfo.loanAmount);
 		loanApplicationStatus = LoanStatus.DISBURSED;
-		loadDisburedDate = now;
+		loadDisburedDate = block.timestamp;
 	}
 
 	function loanBalance() public view returns (uint256){
