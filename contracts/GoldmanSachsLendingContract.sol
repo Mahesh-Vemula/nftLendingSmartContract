@@ -8,41 +8,40 @@ contract GoldmanSachsLendingContract {
 
 	struct LoanRequestInfo {
 		address nftTokenAddress;
+		ERC20 USDCTokenAddress;
 		uint256 tokenId;
 		uint256 loanAmount;
 		uint256 interestRate;
 		uint256 loanDuration;
 	}
-
+	
 	enum LoanStatus { REQUESTED, APPROVED, DENIED, DISBURSED, DELAYED, PAYED, LIQUIDATED}
 
 	LoanRequestInfo public loanRequestInfo;
 	LoanStatus loanApplicationStatus;
-	address payable public lender;
-	ERC20 lendingUSDCToken;
-	address payable public borrower;
-	uint loadDisburedDate;
-
-
+	address public lender;
+	address public borrower;
+	uint public loadDisburedDate;
+	
 	constructor (address nftTokenAddress,
+		address USDCTokenAddress,
 		uint256 tokenId,
 		uint256 loanAmount,
 		uint256 interestRate,
 		uint256 loanDuration) {
-		loanRequestInfo = LoanRequestInfo(nftTokenAddress, tokenId, loanAmount, interestRate, loanDuration);
+		loanRequestInfo = LoanRequestInfo(nftTokenAddress, ERC20(USDCTokenAddress), tokenId, loanAmount, interestRate, loanDuration);
 		loanApplicationStatus = LoanStatus.REQUESTED;
 	}
 
-	function lenderApproveLoanRequest() public payable returns (string memory){
+	function lenderApproveLoanRequest() public payable returns (string memory) {
 		uint256 nftValue = GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).getNFTValue(loanRequestInfo.tokenId);
 		require(!(GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).isUnderCollateral(loanRequestInfo.tokenId)));
-		//require(msg.value >= loanRequestInfo.loanAmount);
 		address nftOwner = GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).ownerOf(loanRequestInfo.tokenId);
 		require(msg.sender != nftOwner);
-		lendingUSDCToken = ERC20(msg.sender);
-		require(lendingUSDCToken.approve(address(this), loanRequestInfo.loanAmount));
-		lender = payable(msg.sender);
-		borrower = payable(nftOwner);
+		require(loanRequestInfo.USDCTokenAddress.balanceOf(msg.sender) >= loanRequestInfo.loanAmount);
+		require(loanRequestInfo.USDCTokenAddress.allowance(msg.sender, address(this)) >= loanRequestInfo.loanAmount);
+		lender = (msg.sender);
+		borrower = (nftOwner);
 		if(nftValue > (loanRequestInfo.loanAmount * 7/10)){
 			loanApplicationStatus = LoanStatus.APPROVED;
 			return "Loan Approved";
@@ -51,18 +50,17 @@ contract GoldmanSachsLendingContract {
 			return "Loan Request exceeded required collateral value";
 		}
 	}
-
-	function borrowerTakeDisbursement() public{
+	
+	function borrowerTakeDisbursement() public {
 		require(msg.sender == borrower);
 		require(loanApplicationStatus == LoanStatus.APPROVED);
 		require((GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).getApproved(loanRequestInfo.tokenId)) == address(this));
-		borrower.transfer(loanRequestInfo.loanAmount);
 		loanApplicationStatus = LoanStatus.DISBURSED;
 		loadDisburedDate = block.timestamp;
 		GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).updateCollateralStatus(loanRequestInfo.tokenId, true);
-		lendingUSDCToken.transferFrom(msg.sender, address(this), loanRequestInfo.loanAmount);
+		loanRequestInfo.USDCTokenAddress.transferFrom( lender, borrower, loanRequestInfo.loanAmount);
 	}
-
+	
 	function loanBalance() public view returns (uint256){
 		uint256 timeToCalculateInterestFor =  block.timestamp - loadDisburedDate;
 		uint256 noOfDays = timeToCalculateInterestFor / (60*60*24);
@@ -72,31 +70,28 @@ contract GoldmanSachsLendingContract {
 	}
 
 	function payLoanDue() public payable{
-		//require(msg.value <= loanBalance());
-		require(msg.sender == borrower);
-		ERC20 borrowerUSDCToken = ERC20(msg.sender);
-		require(borrowerUSDCToken.approve(address(this), loanBalance()));
-		borrowerUSDCToken.transferFrom(msg.sender, address(this), loanBalance());
+		require(loanRequestInfo.USDCTokenAddress.balanceOf(msg.sender) >= loanBalance());
+		require(loanRequestInfo.USDCTokenAddress.allowance(msg.sender, address(this)) >= loanBalance());
+		loanRequestInfo.USDCTokenAddress.transferFrom(msg.sender, lender, loanBalance());
 		loanApplicationStatus = LoanStatus.PAYED;
 		GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).updateCollateralStatus(loanRequestInfo.tokenId, false);
+		GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).approve(borrower, loanRequestInfo.tokenId);
 	}
 
 	function initiateLiquidation() public payable{
 		uint256 timeToCalculateInterestFor =  block.timestamp - loadDisburedDate;
 		uint256 noOfDays = timeToCalculateInterestFor / (60*60*24);
 		require(noOfDays > loanRequestInfo.loanDuration);
-		//require(msg.value <= loanBalance());
-		ERC20 liqudatingUSDCToken = ERC20(msg.sender);
-		require(liqudatingUSDCToken.approve(address(this), loanBalance()));
-		liqudatingUSDCToken.transferFrom(msg.sender, address(lendingUSDCToken), loanBalance());
+		require(loanRequestInfo.USDCTokenAddress.balanceOf(msg.sender) >= loanBalance());
+		loanRequestInfo.USDCTokenAddress.transfer( lender, loanBalance());
 		GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).safeTransferFrom(borrower, msg.sender, loanRequestInfo.tokenId);
 		loanApplicationStatus = LoanStatus.LIQUIDATED;
 	}
-
+	
 	function getBalanceOfContract() public view returns (uint256){
 		return address(this).balance;
 	}
-
+	
 	function getLoanStatus() public view returns (string memory){
 		if(loanApplicationStatus == LoanStatus.APPROVED){
 			return "Loan request approved and ready to disburse";
@@ -111,7 +106,8 @@ contract GoldmanSachsLendingContract {
 		}else if(loanApplicationStatus == LoanStatus.LIQUIDATED){
 			return "NFT sold and payed off loan amount";
 		}
-		return "Request Initiated";
+		return "Loan request Initiated";
 	}
-
+	
 }
+
