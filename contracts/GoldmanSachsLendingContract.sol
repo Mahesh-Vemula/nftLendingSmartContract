@@ -63,6 +63,10 @@ contract GoldmanSachsLendingContract {
 	function getLoanStatus() public view returns (string memory){
 		if(loanApplicationStatus == LoanStatus.APPROVED){
 			return "Loan request approved and ready to disburse";
+		}else if(loanApplicationStatus == LoanStatus.DENIED){
+			return "Loan request denied";
+		}else if(loanApplicationStatus == LoanStatus.DISBURSED){
+			return "Loan amount disbursed";
 		}
 		return "Request Initiated";
 	}
