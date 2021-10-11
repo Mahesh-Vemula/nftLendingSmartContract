@@ -19,7 +19,7 @@ contract GoldmanSachsLendingContract {
 	LoanRequestInfo public loanRequestInfo;
 	LoanStatus loanApplicationStatus;
 	address payable public lender;
-	ERC20 LendingUSDCToken;
+	ERC20 lendingUSDCToken;
 	address payable public borrower;
 	uint loadDisburedDate;
 
@@ -39,8 +39,8 @@ contract GoldmanSachsLendingContract {
 		//require(msg.value >= loanRequestInfo.loanAmount);
 		address nftOwner = GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).ownerOf(loanRequestInfo.tokenId);
 		require(msg.sender != nftOwner);
-		LendingUSDCToken = ERC20(msg.sender);
-		require(LendingUSDCToken.approve(address(this), loanRequestInfo.loanAmount));
+		lendingUSDCToken = ERC20(msg.sender);
+		require(lendingUSDCToken.approve(address(this), loanRequestInfo.loanAmount));
 		lender = payable(msg.sender);
 		borrower = payable(nftOwner);
 		if(nftValue > (loanRequestInfo.loanAmount * 7/10)){
@@ -55,12 +55,12 @@ contract GoldmanSachsLendingContract {
 	function borrowerTakeDisbursement() public{
 		require(msg.sender == borrower);
 		require(loanApplicationStatus == LoanStatus.APPROVED);
+		require((GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).getApproved(loanRequestInfo.tokenId)) == address(this));
 		borrower.transfer(loanRequestInfo.loanAmount);
 		loanApplicationStatus = LoanStatus.DISBURSED;
 		loadDisburedDate = block.timestamp;
 		GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).updateCollateralStatus(loanRequestInfo.tokenId, true);
-		//TODO - USDC tokens issue logic
-		//TODO - Add NFT collateral
+		lendingUSDCToken.transferFrom(msg.sender, address(this), loanRequestInfo.loanAmount);
 	}
 
 	function loanBalance() public view returns (uint256){
