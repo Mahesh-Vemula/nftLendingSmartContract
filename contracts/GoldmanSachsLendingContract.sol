@@ -42,6 +42,7 @@ contract GoldmanSachsLendingContract {
 			loanApplicationStatus = LoanStatus.DENIED;
 			return "Loan Request exceeded required collateral value";
 		}
+		//TODO - USDC token related logic
 	}
 
 	function borrowerTakeDisbursement() public{
@@ -49,6 +50,7 @@ contract GoldmanSachsLendingContract {
 		borrower.transfer(loanRequestInfo.loanAmount);
 		loanApplicationStatus = LoanStatus.DISBURSED;
 		loadDisburedDate = block.timestamp;
+		//TODO - USDC tokens issue logic, Add NFT collateral
 	}
 
 	function loanBalance() public view returns (uint256){
@@ -62,7 +64,7 @@ contract GoldmanSachsLendingContract {
 	function payLoanDue() public payable{
 		require(msg.value <= loanBalance());
 		loanApplicationStatus = LoanStatus.PAYED;
-		//To do - update NFT collateral
+		//To do - update NFT collateral, receive payment in USDC
 	}
 
 	function initiateLiquidation() public payable{
@@ -70,7 +72,7 @@ contract GoldmanSachsLendingContract {
 		uint256 noOfDays = timeToCalculateInterestFor / (60*60*24);
 		require(noOfDays > loanRequestInfo.loanDuration);
 		require(msg.value <= loanBalance());
-		//To do - transfer NFT ownership
+		//To do - transfer NFT ownership, receive payment in USDC
 	}
 
 	function getBalanceOfContract() public view returns (uint256){
