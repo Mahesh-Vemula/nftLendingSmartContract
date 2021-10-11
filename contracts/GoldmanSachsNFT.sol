@@ -25,5 +25,18 @@ contract GoldmanSachsNFT is ERC721 {
 	function getNFTValue(uint256 tokenId) public view returns (uint256) {
 		return nftPrices[tokenId];
 	}
+	
+	function isUnderCollateral(uint256 tokenId) public view returns (bool) {
+	    return nftCollateralStatus[tokenId];
+	}
+	
+	function updateCollateralStatus(uint256 tokenId, bool status) public returns (string memory){
+	    nftCollateralStatus[tokenId] = status;
+	    if(nftCollateralStatus[tokenId] == status){
+	        return "Success";
+	    }else{
+	        return "Failed to update status";
+	    }
+	}
 
 }
