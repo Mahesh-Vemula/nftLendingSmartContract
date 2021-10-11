@@ -33,8 +33,12 @@ contract GoldmanSachsLendingContract {
 
 	function lenderApproveLoanRequest() public payable returns (string memory){
 		uint256 nftValue = GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).getNFTValue(loanRequestInfo.tokenId);
+		require(!(GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).isUnderCollateral(loanRequestInfo.tokenId)));
 		require(msg.value >= loanRequestInfo.loanAmount);
+		address nftOwner = GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).ownerOf(loanRequestInfo.tokenId);
+		require(msg.sender != nftOwner);
 		lender = payable(msg.sender);
+		borrower = payable(nftOwner);
 		if(nftValue > (loanRequestInfo.loanAmount * 7/10)){
 			loanApplicationStatus = LoanStatus.APPROVED;
 			return "Loan Approved";
@@ -46,11 +50,13 @@ contract GoldmanSachsLendingContract {
 	}
 
 	function borrowerTakeDisbursement() public{
-		borrower = payable( GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).ownerOf(loanRequestInfo.tokenId));
+		require(msg.sender == borrower);
 		borrower.transfer(loanRequestInfo.loanAmount);
 		loanApplicationStatus = LoanStatus.DISBURSED;
 		loadDisburedDate = block.timestamp;
-		//TODO - USDC tokens issue logic, Add NFT collateral
+		GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).updateCollateralStatus(loanRequestInfo.tokenId, true);
+		//TODO - USDC tokens issue logic
+		//TODO - Add NFT collateral
 	}
 
 	function loanBalance() public view returns (uint256){
@@ -64,7 +70,9 @@ contract GoldmanSachsLendingContract {
 	function payLoanDue() public payable{
 		require(msg.value <= loanBalance());
 		loanApplicationStatus = LoanStatus.PAYED;
-		//To do - update NFT collateral, receive payment in USDC
+		GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).updateCollateralStatus(loanRequestInfo.tokenId, false);
+		//TODO - update NFT collateral
+		//TODO - receive payment in USDC
 	}
 
 	function initiateLiquidation() public payable{
@@ -72,7 +80,7 @@ contract GoldmanSachsLendingContract {
 		uint256 noOfDays = timeToCalculateInterestFor / (60*60*24);
 		require(noOfDays > loanRequestInfo.loanDuration);
 		require(msg.value <= loanBalance());
-		//To do - transfer NFT ownership, receive payment in USDC
+		//TODO - transfer NFT ownership, receive payment in USDC
 	}
 
 	function getBalanceOfContract() public view returns (uint256){
