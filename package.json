@@ -1,0 +1,18 @@
+{
+  "name": "gsnftlending",
+  "version": "1.0.0",
+  "description": "Goldman Sachs lending by NFT Collateral Smart Contract",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.3.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
