@@ -13,7 +13,7 @@ contract GoldmanSachsLendingContract {
 		uint256 loanDuration;
 	}
 
-	enum LoanStatus { REQUESTED, APPROVED, DENIED, DISBURSED, DELAYED, PAYED}
+	enum LoanStatus { REQUESTED, APPROVED, DENIED, DISBURSED, DELAYED, PAYED, LIQUIDATED}
 
 	LoanRequestInfo public loanRequestInfo;
 	LoanStatus loanApplicationStatus;
@@ -67,6 +67,12 @@ contract GoldmanSachsLendingContract {
 			return "Loan request denied";
 		}else if(loanApplicationStatus == LoanStatus.DISBURSED){
 			return "Loan amount disbursed";
+		}else if(loanApplicationStatus == LoanStatus.DELAYED){
+			return "Loan payment due date crossed. NFT available to liqudate";
+		}else if(loanApplicationStatus == LoanStatus.PAYED){
+			return "Loan amount payed in full. NFT collateral released";
+		}else if(loanApplicationStatus == LoanStatus.LIQUIDATED){
+			return "NFT sold and payed off loan amount";
 		}
 		return "Request Initiated";
 	}
