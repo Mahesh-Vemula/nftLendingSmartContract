@@ -1,4 +1,4 @@
-const SimpleStorage = artifacts.require('SimpleStorage.sol');
+/* const SimpleStorage = artifacts.require('SimpleStorage.sol');
 
 contract('SimpleStorage', () =>{
 	it('Should update data', async () => {
@@ -7,4 +7,4 @@ contract('SimpleStorage', () =>{
 		const data = await storage.readData();
 		assert(data.toString() === '10');
 	});
-});
+}); */

@@ -29,8 +29,10 @@ contract GoldmanSachsLendingContract {
 		loanApplicationStatus = LoanStatus.REQUESTED;
 	}
 
-	function lenderApproveLoanRequest() public returns (string memory){
+	function lenderApproveLoanRequest() public payable returns (string memory){
 		uint256 nftValue = GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).getNFTValue(loanRequestInfo.tokenId);
+		require(msg.value >= loanRequestInfo.loanAmount);
+		lender = msg.sender;
 		if(nftValue > (loanRequestInfo.loanAmount * 7/10)){
 			loanApplicationStatus = LoanStatus.APPROVED;
 			return "Loan Approved";
@@ -39,6 +41,5 @@ contract GoldmanSachsLendingContract {
 			return "Loan Request exceeded required collateral value";
 		}
 	}
-
 
 }
