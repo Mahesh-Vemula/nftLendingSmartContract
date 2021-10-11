@@ -35,11 +35,11 @@ contract GoldmanSachsLendingContract {
 
 	function lenderApproveLoanRequest() public payable returns (string memory) {
 		uint256 nftValue = GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).getNFTValue(loanRequestInfo.tokenId);
-		require(!(GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).isUnderCollateral(loanRequestInfo.tokenId)));
+		require(!(GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).isUnderCollateral(loanRequestInfo.tokenId)), "Provide NFT is UnderCollateral status");
 		address nftOwner = GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).ownerOf(loanRequestInfo.tokenId);
-		require(msg.sender != nftOwner);
-		require(loanRequestInfo.USDCTokenAddress.balanceOf(msg.sender) >= loanRequestInfo.loanAmount);
-		require(loanRequestInfo.USDCTokenAddress.allowance(msg.sender, address(this)) >= loanRequestInfo.loanAmount);
+		require(msg.sender != nftOwner, "NFT owner and lender are same!");
+		require(loanRequestInfo.USDCTokenAddress.balanceOf(msg.sender) >= loanRequestInfo.loanAmount, "Lender do not have enough tokens");
+		require(loanRequestInfo.USDCTokenAddress.allowance(msg.sender, address(this)) >= loanRequestInfo.loanAmount, "Lender did not approve contract to authorize transfer of loan amount");
 		lender = (msg.sender);
 		borrower = (nftOwner);
 		if(nftValue > (loanRequestInfo.loanAmount * 7/10)){
@@ -52,9 +52,9 @@ contract GoldmanSachsLendingContract {
 	}
 	
 	function borrowerTakeDisbursement() public {
-		require(msg.sender == borrower);
-		require(loanApplicationStatus == LoanStatus.APPROVED);
-		require((GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).getApproved(loanRequestInfo.tokenId)) == address(this));
+		require(msg.sender == borrower, "Only borrower can take disbursement!");
+		require(loanApplicationStatus == LoanStatus.APPROVED, "Loan status is not approved!");
+		require((GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).getApproved(loanRequestInfo.tokenId)) == address(this), "Contract is not added for NFT approval!");
 		loanApplicationStatus = LoanStatus.DISBURSED;
 		loadDisburedDate = block.timestamp;
 		GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).updateCollateralStatus(loanRequestInfo.tokenId, true);
@@ -70,8 +70,8 @@ contract GoldmanSachsLendingContract {
 	}
 
 	function payLoanDue() public payable{
-		require(loanRequestInfo.USDCTokenAddress.balanceOf(msg.sender) >= loanBalance());
-		require(loanRequestInfo.USDCTokenAddress.allowance(msg.sender, address(this)) >= loanBalance());
+		require(loanRequestInfo.USDCTokenAddress.balanceOf(msg.sender) >= loanBalance(), "Sender do not have enough tokens!");
+		require(loanRequestInfo.USDCTokenAddress.allowance(msg.sender, address(this)) >= loanBalance(), "Contract not authorized to transfer loan amount to lender!");
 		loanRequestInfo.USDCTokenAddress.transferFrom(msg.sender, lender, loanBalance());
 		loanApplicationStatus = LoanStatus.PAYED;
 		GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).updateCollateralStatus(loanRequestInfo.tokenId, false);
@@ -81,8 +81,8 @@ contract GoldmanSachsLendingContract {
 	function initiateLiquidation() public payable{
 		uint256 timeToCalculateInterestFor =  block.timestamp - loadDisburedDate;
 		uint256 noOfDays = timeToCalculateInterestFor / (60*60*24);
-		require(noOfDays > loanRequestInfo.loanDuration);
-		require(loanRequestInfo.USDCTokenAddress.balanceOf(msg.sender) >= loanBalance());
+		require(noOfDays > loanRequestInfo.loanDuration, "Loan due date is not reached. Cannot not liqudate.");
+		require(loanRequestInfo.USDCTokenAddress.balanceOf(msg.sender) >= loanBalance(), "Sender do not have enough balance!");
 		loanRequestInfo.USDCTokenAddress.transfer( lender, loanBalance());
 		GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).safeTransferFrom(borrower, msg.sender, loanRequestInfo.tokenId);
 		loanApplicationStatus = LoanStatus.LIQUIDATED;
