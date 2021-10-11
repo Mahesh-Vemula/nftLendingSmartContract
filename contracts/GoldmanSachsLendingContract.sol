@@ -2,6 +2,7 @@
 pragma solidity ^0.8.4;
 
 import "./GoldmanSachsNFT.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract GoldmanSachsLendingContract {
 
@@ -18,6 +19,7 @@ contract GoldmanSachsLendingContract {
 	LoanRequestInfo public loanRequestInfo;
 	LoanStatus loanApplicationStatus;
 	address payable public lender;
+	ERC20 LendingUSDCToken;
 	address payable public borrower;
 	uint loadDisburedDate;
 
@@ -34,9 +36,11 @@ contract GoldmanSachsLendingContract {
 	function lenderApproveLoanRequest() public payable returns (string memory){
 		uint256 nftValue = GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).getNFTValue(loanRequestInfo.tokenId);
 		require(!(GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).isUnderCollateral(loanRequestInfo.tokenId)));
-		require(msg.value >= loanRequestInfo.loanAmount);
+		//require(msg.value >= loanRequestInfo.loanAmount);
 		address nftOwner = GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).ownerOf(loanRequestInfo.tokenId);
 		require(msg.sender != nftOwner);
+		LendingUSDCToken = ERC20(msg.sender);
+		require(LendingUSDCToken.approve(address(this), loanRequestInfo.loanAmount));
 		lender = payable(msg.sender);
 		borrower = payable(nftOwner);
 		if(nftValue > (loanRequestInfo.loanAmount * 7/10)){
@@ -46,11 +50,11 @@ contract GoldmanSachsLendingContract {
 			loanApplicationStatus = LoanStatus.DENIED;
 			return "Loan Request exceeded required collateral value";
 		}
-		//TODO - USDC token related logic
 	}
 
 	function borrowerTakeDisbursement() public{
 		require(msg.sender == borrower);
+		require(loanApplicationStatus == LoanStatus.APPROVED);
 		borrower.transfer(loanRequestInfo.loanAmount);
 		loanApplicationStatus = LoanStatus.DISBURSED;
 		loadDisburedDate = block.timestamp;
