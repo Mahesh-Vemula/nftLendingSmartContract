@@ -3,6 +3,7 @@ const GoldmanSachsNFT = artifacts.require('GoldmanSachsNFT.sol');
 contract ('GoldmanSachsNFT', (accounts) => {
 
 	const toBN = web3.utils.toBN;
+	var BN = web3.utils.BN;
 
 	it('New NFT created', async() => {
 		const gsnft = await GoldmanSachsNFT.new();
@@ -24,14 +25,9 @@ contract ('GoldmanSachsNFT', (accounts) => {
 	});
 	it('Add new approval', async() => {
 		const gsnft = await GoldmanSachsNFT.new();
-		tokenId = await gsnft.createNFT(100);
-		console.log(accounts);
-		//address addressForApprove = "0x78731D3Ca6b7E34aC0F824c42a7cC18A495cabaB"
-		//var addressForApprove = accounts[1];
-		gsnft.approve( accounts[1], tokenId);
-		//console.log(BigNumber(await gsnft.getApproved(tokenId)));
-		//await gsnft.getApproved(tokenId);
-		//assert(tokenApprovedAddress == accounts[1]);
-		//assert(true);
+		await gsnft.createNFT(100);
+		await gsnft.approve(accounts[1], 0, {from: accounts[0]});
+		let approvedAddress = await gsnft.getApproved(0) ;
+		assert(approvedAddress == accounts[1]);
 	});
 });
