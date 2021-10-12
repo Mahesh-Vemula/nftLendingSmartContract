@@ -6,6 +6,12 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract GoldmanSachsLendingContract {
 
+	/**
+	 * Object to store loan request details
+	 * loanAmount - Requested loan amount
+	 * interestRate - Annual rate of interest requested
+	 * loanDuration - No of day required for loan payment
+	**/
 	struct LoanRequestInfo {
 		address nftTokenAddress;
 		ERC20 USDCTokenAddress;
@@ -15,6 +21,7 @@ contract GoldmanSachsLendingContract {
 		uint256 loanDuration;
 	}
 	
+	//Status of loan application possibilities
 	enum LoanStatus { REQUESTED, APPROVED, DENIED, DISBURSED, DELAYED, PAYED, LIQUIDATED}
 
 	LoanRequestInfo public loanRequestInfo;
@@ -33,6 +40,9 @@ contract GoldmanSachsLendingContract {
 		loanApplicationStatus = LoanStatus.REQUESTED;
 	}
 
+	/**
+	 * This method call is used by lender to approve and fund loan request
+	**/
 	function lenderApproveLoanRequest() public payable returns (string memory) {
 		uint256 nftValue = GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).getNFTValue(loanRequestInfo.tokenId);
 		require(!(GoldmanSachsNFT(loanRequestInfo.nftTokenAddress).isUnderCollateral(loanRequestInfo.tokenId)), "Provide NFT is UnderCollateral status");
@@ -51,6 +61,9 @@ contract GoldmanSachsLendingContract {
 		}
 	}
 	
+	/**
+	 * This method call is used by borrower to add NFT as collateral and take loan disbursement
+	**/
 	function borrowerTakeDisbursement() public {
 		require(msg.sender == borrower, "Only borrower can take disbursement!");
 		require(loanApplicationStatus == LoanStatus.APPROVED, "Loan status is not approved!");
@@ -61,6 +74,10 @@ contract GoldmanSachsLendingContract {
 		loanRequestInfo.USDCTokenAddress.transferFrom( lender, borrower, loanRequestInfo.loanAmount);
 	}
 	
+	/**
+	 * This method call returns balance of loan which includes principle and interest
+	 * Interest is calculated as simple interest per day basis
+	**/
 	function loanBalance() public view returns (uint256){
 		uint256 timeToCalculateInterestFor =  block.timestamp - loadDisburedDate;
 		uint256 noOfDays = timeToCalculateInterestFor / (60*60*24);
@@ -71,6 +88,9 @@ contract GoldmanSachsLendingContract {
 		return payOffBalance;
 	}
 
+	/**
+	 * This method call is used to pay loan balance amount and release NFT from collateral
+	**/
 	function payLoanDue() public payable{
 		require(loanRequestInfo.USDCTokenAddress.balanceOf(msg.sender) >= loanBalance(), "Sender do not have enough tokens!");
 		require(loanRequestInfo.USDCTokenAddress.allowance(msg.sender, address(this)) >= loanBalance(), "Contract not authorized to transfer loan amount to lender!");
@@ -82,6 +102,9 @@ contract GoldmanSachsLendingContract {
 
 	}
 
+	/**
+	 * This method call is used to liquidate NFT in case of loan due date is passed
+	**/
 	function initiateLiquidation() public payable{
 		uint256 timeToCalculateInterestFor =  block.timestamp - loadDisburedDate;
 		uint256 noOfDays = timeToCalculateInterestFor / (60*60*24);
@@ -92,10 +115,9 @@ contract GoldmanSachsLendingContract {
 		loanApplicationStatus = LoanStatus.LIQUIDATED;
 	}
 	
-	function getBalanceOfContract() public view returns (uint256){
-		return address(this).balance;
-	}
-	
+	/**
+	 * This method call is used to know current status of loan
+	**/
 	function getLoanStatus() public view returns (string memory){
 		if(loanApplicationStatus == LoanStatus.APPROVED){
 			return "Loan request approved and ready to disburse";
