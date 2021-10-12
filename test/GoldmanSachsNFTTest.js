@@ -2,9 +2,6 @@ const GoldmanSachsNFT = artifacts.require('GoldmanSachsNFT.sol');
 
 contract ('GoldmanSachsNFT', (accounts) => {
 
-	const toBN = web3.utils.toBN;
-	var BN = web3.utils.BN;
-
 	it('New NFT created', async() => {
 		const gsnft = await GoldmanSachsNFT.new();
 		await gsnft.createNFT(100);
