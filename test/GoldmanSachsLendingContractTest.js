@@ -146,6 +146,42 @@ contract ('GoldmanSachsLendingContract exceptions testing', async accounts => {
 		}
 	});
 
+	it('Only borrower can take disbursement', async() => {
+		lendingContract = await GoldmanSachsLendingContract.new(
+			gsnfToken.address, usdcToken.address, 0, loanAmount, 12, 12,{from: borrower});
+		await usdcToken.approve(lendingContract.address, 1000, {from: lender});
+		await lendingContract.lenderApproveLoanRequest({from: lender});
+		try{
+			await lendingContract.borrowerTakeDisbursement({from: accounts[4]});
+		}catch (error){
+			assert(error.reason == "Only borrower can take disbursement!");
+		}
+	});
+
+	it('Unapproved loan cannot be disbursed', async() => {
+		const lendingContract1 = await GoldmanSachsLendingContract.new(
+			gsnfToken.address, usdcToken.address, 0, 1000, 12, 12,{from: borrower});
+		await usdcToken.approve(lendingContract1.address, 1000, {from: lender});
+		const resp = await lendingContract1.lenderApproveLoanRequest({from: lender});
+		try{
+			await lendingContract1.borrowerTakeDisbursement({from: borrower});
+		}catch (error){
+			assert(error.reason == "Loan status is not approved!");
+		}
+	});
+
+	it('Borrower did not approve contract for collateral NFT', async() => {
+		lendingContract = await GoldmanSachsLendingContract.new(
+			gsnfToken.address, usdcToken.address, 0, loanAmount, 12, 12,{from: borrower});
+		await usdcToken.approve(lendingContract.address, 1000, {from: lender});
+		await lendingContract.lenderApproveLoanRequest({from: lender});
+		try{
+			await lendingContract.borrowerTakeDisbursement({from: borrower});
+		}catch (error){
+			assert(error.reason == "Contract is not added for NFT approval!");
+		}
+	});
+
 });
 
 
