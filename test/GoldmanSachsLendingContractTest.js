@@ -8,8 +8,9 @@ let lendingContract = undefined;
 let deployer = undefined;
 let lender = undefined;
 let borrower = undefined;
-const nftValue = 1000;
-const loanAmount = 500;
+const CoinSupply = 1000000000000000;
+const nftValue = 100000000000;
+const loanAmount = 500000000;
 
 contract ('GoldmanSachsLendingContract Happy path testing', async accounts => {
 
@@ -27,10 +28,10 @@ contract ('GoldmanSachsLendingContract Happy path testing', async accounts => {
 		await gsnfToken.createNFT(nftValue, {from: borrower});
 
 		//Deploy USDC smart contract with intitial supply of 1000000 wei
-		usdcToken = await USDCToken.new("United States Digital Coin", "USDC", 1000000);
+		usdcToken = await USDCToken.new("United States Digital Coin", "USDC", CoinSupply);
 
 		//Transfer wei to lender account[2]
-		await usdcToken.transfer(lender, 10000);
+		await usdcToken.transfer(lender, loanAmount);
 
 	});
 
@@ -51,12 +52,12 @@ contract ('GoldmanSachsLendingContract Happy path testing', async accounts => {
 
 	it('Lender has enough balance', async() => {
 		const balance = await usdcToken.balanceOf(lender);
-		assert(balance >= nftValue);
+		assert(balance >= loanAmount);
 	});
 
 	it('Lending contract created', async() => {
 		const lendingContract = await GoldmanSachsLendingContract.new(
-			gsnfToken.address, usdcToken.address, 0, 500, 12, 12);
+			gsnfToken.address, usdcToken.address, 0, loanAmount, 12, 12);
 		const loanStatus = await lendingContract.getLoanStatus();
 		assert(loanStatus == "Loan request Initiated");
 	});
@@ -109,10 +110,10 @@ contract ('GoldmanSachsLendingContract exceptions testing', async accounts => {
 		await gsnfToken.createNFT(nftValue, {from: borrower});
 
 		//Deploy USDC smart contract with intitial supply of 1000000 wei
-		usdcToken = await USDCToken.new("United States Digital Coin", "USDC", 1000000);
+		usdcToken = await USDCToken.new("United States Digital Coin", "USDC", CoinSupply);
 
 		//Transfer wei to lender account[2]
-		await usdcToken.transfer(lender, 10000);
+		await usdcToken.transfer(lender, nftValue);
 
 	});
 
@@ -129,8 +130,8 @@ contract ('GoldmanSachsLendingContract exceptions testing', async accounts => {
 
 	it('Borrower requested loan more than 70 percent of NFT value failure', async() => {
 		const lendingContract1 = await GoldmanSachsLendingContract.new(
-			gsnfToken.address, usdcToken.address, 0, 1000, 12, 12,{from: borrower});
-		await usdcToken.approve(lendingContract1.address, 1000, {from: lender});
+			gsnfToken.address, usdcToken.address, 0, nftValue, 12, 12,{from: borrower});
+		await usdcToken.approve(lendingContract1.address, nftValue, {from: lender});
 		const resp = await lendingContract1.lenderApproveLoanRequest({from: lender});
 		const loanStatus = await lendingContract1.getLoanStatus();
 		assert(loanStatus == "Loan request denied");
@@ -138,7 +139,7 @@ contract ('GoldmanSachsLendingContract exceptions testing', async accounts => {
 
 	it('Lender did not approve contract to transfer tokens', async() => {
 		lendingContract = await GoldmanSachsLendingContract.new(
-			gsnfToken.address, usdcToken.address, 0, nftValue, 12, 12,{from: borrower});
+			gsnfToken.address, usdcToken.address, 0, loanAmount, 12, 12,{from: borrower});
 		try{
 			await lendingContract.lenderApproveLoanRequest({from: lender});
 		}catch (error){
@@ -149,7 +150,7 @@ contract ('GoldmanSachsLendingContract exceptions testing', async accounts => {
 	it('Only borrower can take disbursement', async() => {
 		lendingContract = await GoldmanSachsLendingContract.new(
 			gsnfToken.address, usdcToken.address, 0, loanAmount, 12, 12,{from: borrower});
-		await usdcToken.approve(lendingContract.address, 1000, {from: lender});
+		await usdcToken.approve(lendingContract.address, nftValue, {from: lender});
 		await lendingContract.lenderApproveLoanRequest({from: lender});
 		try{
 			await lendingContract.borrowerTakeDisbursement({from: accounts[4]});
@@ -160,8 +161,8 @@ contract ('GoldmanSachsLendingContract exceptions testing', async accounts => {
 
 	it('Unapproved loan cannot be disbursed', async() => {
 		const lendingContract1 = await GoldmanSachsLendingContract.new(
-			gsnfToken.address, usdcToken.address, 0, 1000, 12, 12,{from: borrower});
-		await usdcToken.approve(lendingContract1.address, 1000, {from: lender});
+			gsnfToken.address, usdcToken.address, 0, nftValue, 12, 12,{from: borrower});
+		await usdcToken.approve(lendingContract1.address, nftValue, {from: lender});
 		const resp = await lendingContract1.lenderApproveLoanRequest({from: lender});
 		try{
 			await lendingContract1.borrowerTakeDisbursement({from: borrower});
@@ -173,7 +174,7 @@ contract ('GoldmanSachsLendingContract exceptions testing', async accounts => {
 	it('Borrower did not approve contract for collateral NFT', async() => {
 		lendingContract = await GoldmanSachsLendingContract.new(
 			gsnfToken.address, usdcToken.address, 0, loanAmount, 12, 12,{from: borrower});
-		await usdcToken.approve(lendingContract.address, 1000, {from: lender});
+		await usdcToken.approve(lendingContract.address, loanAmount, {from: lender});
 		await lendingContract.lenderApproveLoanRequest({from: lender});
 		try{
 			await lendingContract.borrowerTakeDisbursement({from: borrower});
@@ -185,7 +186,7 @@ contract ('GoldmanSachsLendingContract exceptions testing', async accounts => {
 	it('Pay loan without enough balance', async() => {
 		lendingContract = await GoldmanSachsLendingContract.new(
 			gsnfToken.address, usdcToken.address, 0, loanAmount, 12, 12,{from: borrower});
-		await usdcToken.approve(lendingContract.address, 1000, {from: lender});
+		await usdcToken.approve(lendingContract.address, loanAmount, {from: lender});
 		await lendingContract.lenderApproveLoanRequest({from: lender});
 		await gsnfToken.approve(lendingContract.address, 0, {from: borrower});
 		await lendingContract.borrowerTakeDisbursement({from: borrower});
@@ -208,7 +209,7 @@ contract ('GoldmanSachsLendingContract exceptions testing', async accounts => {
 
 	it('Liquidate before payment due date is not allowed', async() => {
 		const loanBalance = await lendingContract.loanBalance();
-		await usdcToken.transfer(accounts[4], 10000);
+		await usdcToken.transfer(accounts[4], nftValue);
 		await usdcToken.approve(lendingContract.address, loanBalance, {from: accounts[4]});
 		try{
 			await lendingContract.initiateLiquidation({from: accounts[4]});

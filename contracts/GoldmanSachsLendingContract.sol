@@ -64,7 +64,9 @@ contract GoldmanSachsLendingContract {
 	function loanBalance() public view returns (uint256){
 		uint256 timeToCalculateInterestFor =  block.timestamp - loadDisburedDate;
 		uint256 noOfDays = timeToCalculateInterestFor / (60*60*24);
-		uint256 interest = noOfDays * (loanRequestInfo.interestRate / (100 * 365) );
+		uint256 interestRatePerDay = (loanRequestInfo.interestRate * (10**8)) / 365 ;
+		uint256 interestPerDay = interestRatePerDay * loanRequestInfo.loanAmount;
+		uint256 interest = interestPerDay * noOfDays / (10**10);
 		uint256 payOffBalance = interest + loanRequestInfo.loanAmount;
 		return payOffBalance;
 	}
