@@ -11,7 +11,7 @@ let borrower = undefined;
 const nftValue = 1000;
 const loanAmount = 500;
 
-contract ('GoldmanSachsLendingContract', async accounts => {
+contract ('GoldmanSachsLendingContract Happy path testing', async accounts => {
 
 	before("Deploy contracts, tokens and NFT", async function () {
 
@@ -89,6 +89,61 @@ contract ('GoldmanSachsLendingContract', async accounts => {
 		assert((balanceAfterPayment.sub(balanceBeforePayment)).toNumber() == loanAmount);
 		const approvedFor = await gsnfToken.getApproved(0);
 		assert(approvedFor == 0);
+	});
+
+});
+
+contract ('GoldmanSachsLendingContract exceptions testing', async accounts => {
+
+	before("Deploy contracts, tokens and NFT", async function () {
+
+		//We are marking deployer, lender, borrower addressess
+		deployer = accounts[0];
+		lender = accounts[2];
+		borrower = accounts[3];
+
+		//Deploying NFT smart contract
+		gsnfToken = await GoldmanSachsNFT.new();
+
+		//Creating NFT with tokenID 0 and value 1000 by borrower
+		await gsnfToken.createNFT(nftValue, {from: borrower});
+
+		//Deploy USDC smart contract with intitial supply of 1000000 wei
+		usdcToken = await USDCToken.new("United States Digital Coin", "USDC", 1000000);
+
+		//Transfer wei to lender account[2]
+		await usdcToken.transfer(lender, 10000);
+
+	});
+
+	it('Lender do not have enough balance to approve', async() => {
+		lendingContract = await GoldmanSachsLendingContract.new(
+			gsnfToken.address, usdcToken.address, 0, loanAmount, 12, 12,{from: borrower});
+		await usdcToken.approve(lendingContract.address, loanAmount, {from: accounts[4]});
+		try{
+			await lendingContract.lenderApproveLoanRequest({from: accounts[4]});
+		}catch (exception){
+			assert(exception.reason == "Lender do not have enough tokens");
+		}
+	});
+
+	it('Borrower requested loan more than 70 percent of NFT value failure', async() => {
+		const lendingContract1 = await GoldmanSachsLendingContract.new(
+			gsnfToken.address, usdcToken.address, 0, 1000, 12, 12,{from: borrower});
+		await usdcToken.approve(lendingContract1.address, 1000, {from: lender});
+		const resp = await lendingContract1.lenderApproveLoanRequest({from: lender});
+		const loanStatus = await lendingContract1.getLoanStatus();
+		assert(loanStatus == "Loan request denied");
+	});
+
+	it('Lender did not approve contract to transfer tokens', async() => {
+		lendingContract = await GoldmanSachsLendingContract.new(
+			gsnfToken.address, usdcToken.address, 0, nftValue, 12, 12,{from: borrower});
+		try{
+			await lendingContract.lenderApproveLoanRequest({from: lender});
+		}catch (error){
+			assert(error.reason == "Lender did not approve contract to authorize transfer of loan amount");
+		}
 	});
 
 });

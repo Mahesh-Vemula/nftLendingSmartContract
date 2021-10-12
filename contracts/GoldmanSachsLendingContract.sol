@@ -42,7 +42,7 @@ contract GoldmanSachsLendingContract {
 		require(loanRequestInfo.USDCTokenAddress.allowance(msg.sender, address(this)) >= loanRequestInfo.loanAmount, "Lender did not approve contract to authorize transfer of loan amount");
 		lender = (msg.sender);
 		borrower = (nftOwner);
-		if(nftValue > (loanRequestInfo.loanAmount * 7/10)){
+		if(loanRequestInfo.loanAmount <= ( nftValue * 7/10)){
 			loanApplicationStatus = LoanStatus.APPROVED;
 			return "Loan Approved";
 		}else{
