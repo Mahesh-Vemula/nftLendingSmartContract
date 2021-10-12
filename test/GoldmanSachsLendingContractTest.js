@@ -206,7 +206,51 @@ contract ('GoldmanSachsLendingContract exceptions testing', async accounts => {
 		}
 	});
 
+	it('Liquidate before payment due date is not allowed', async() => {
+		const loanBalance = await lendingContract.loanBalance();
+		await usdcToken.transfer(accounts[4], 10000);
+		await usdcToken.approve(lendingContract.address, loanBalance, {from: accounts[4]});
+		try{
+			await lendingContract.initiateLiquidation({from: accounts[4]});
+		}catch (error){
+			assert(error.reason == "Loan due date is not reached. Cannot not liqudate.");
+		}
+	});
+
+	it('Liquidater do not have enough tokens', async() => {
+		try{
+			advancement = 86400 * 14; // 10 Days
+			await increaseTime(advancement);
+			await lendingContract.initiateLiquidation({from: accounts[5]});
+		}catch (error){
+			assert(error.reason == "Sender do not have enough balance!");
+		}
+	});
+
 });
+
+
+function increaseTime(addSeconds) {
+	const id = Date.now();
+
+	return new Promise((resolve, reject) => {
+		web3.currentProvider.send({
+			jsonrpc: '2.0',
+			method: 'evm_increaseTime',
+			params: [addSeconds],
+			id,
+		}, (err1) => {
+			if (err1) return reject(err1);
+
+			web3.currentProvider.send({
+				jsonrpc: '2.0',
+				method: 'evm_mine',
+				id: id + 1,
+			}, (err2, res) => (err2 ? reject(err2) : resolve(res)));
+		});
+	});
+}
+
 
 
 
