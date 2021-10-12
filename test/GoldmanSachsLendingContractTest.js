@@ -182,6 +182,30 @@ contract ('GoldmanSachsLendingContract exceptions testing', async accounts => {
 		}
 	});
 
+	it('Pay loan without enough balance', async() => {
+		lendingContract = await GoldmanSachsLendingContract.new(
+			gsnfToken.address, usdcToken.address, 0, loanAmount, 12, 12,{from: borrower});
+		await usdcToken.approve(lendingContract.address, 1000, {from: lender});
+		await lendingContract.lenderApproveLoanRequest({from: lender});
+		await gsnfToken.approve(lendingContract.address, 0, {from: borrower});
+		await lendingContract.borrowerTakeDisbursement({from: borrower});
+		const loanBalance = await lendingContract.loanBalance();
+		try{
+			await lendingContract.payLoanDue({from: accounts[4]});
+		}catch (error){
+			assert(error.reason == "Sender do not have enough tokens!");
+		}
+	});
+
+	it('Pay loan without approving contract as spender', async() => {
+		const loanBalance = await lendingContract.loanBalance();
+		try{
+			await lendingContract.payLoanDue({from: borrower});
+		}catch (error){
+			assert(error.reason == "Contract not authorized to transfer loan amount to lender!");
+		}
+	});
+
 });
 
 
