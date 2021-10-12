@@ -21,8 +21,8 @@ contract ('GoldmanSachsLendingContract', async accounts => {
 		//Deploying NFT smart contract
 		gsnfToken = await GoldmanSachsNFT.new();
 
-		//Creating NFT with tokenID 0 and value 1000
-		await gsnfToken.createNFT(nftValue);
+		//Creating NFT with tokenID 0 and value 1000 by borrower
+		await gsnfToken.createNFT(nftValue, {from: borrower});
 
 		//Deploy USDC smart contract with intitial supply of 1000000 wei
 		usdcToken = await USDCToken.new("United States Digital Coin", "USDC", 1000000);
@@ -57,6 +57,31 @@ contract ('GoldmanSachsLendingContract', async accounts => {
 			gsnfToken.address, usdcToken.address, 0, 500, 12, 12);
 		const loanStatus = await lendingContract.getLoanStatus();
 		assert(loanStatus == "Loan request Initiated");
+	});
+
+	it('Lender approve the loan request', async() => {
+		const loanAmount = 500;
+		const lendingContract = await GoldmanSachsLendingContract.new(
+			gsnfToken.address, usdcToken.address, 0, loanAmount, 12, 12);
+		await usdcToken.approve(lendingContract.address, loanAmount, {from: lender});
+		await lendingContract.lenderApproveLoanRequest({from: lender});
+		const loanStatus = await lendingContract.getLoanStatus();
+		assert(loanStatus == "Loan request approved and ready to disburse");
+	});
+
+	it('Borrower take disbursement', async() => {
+		const loanAmount = 500;
+		const lendingContract = await GoldmanSachsLendingContract.new(
+			gsnfToken.address, usdcToken.address, 0, loanAmount, 12, 12);
+		await usdcToken.approve(lendingContract.address, loanAmount, {from: lender});
+		await lendingContract.lenderApproveLoanRequest({from: lender});
+		await gsnfToken.approve(lendingContract.address, 0, {from: borrower});
+		const balanceBeforeLoan = await usdcToken.balanceOf(borrower);
+		await lendingContract.borrowerTakeDisbursement({from: borrower});
+		const loanStatus = await lendingContract.getLoanStatus();
+		assert(loanStatus == "Loan amount disbursed");
+		const balanceAfterLoan = await usdcToken.balanceOf(borrower);
+		assert((balanceAfterLoan.sub(balanceBeforeLoan)).toNumber() == loanAmount);
 	});
 
 });
