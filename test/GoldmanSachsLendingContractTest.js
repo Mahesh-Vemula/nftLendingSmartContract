@@ -4,10 +4,12 @@ const GoldmanSachsLendingContract = artifacts.require('GoldmanSachsLendingContra
 
 let gsnfToken = undefined;
 let usdcToken = undefined;
+let lendingContract = undefined;
 let deployer = undefined;
 let lender = undefined;
 let borrower = undefined;
-let nftValue = 1000;
+const nftValue = 1000;
+const loanAmount = 500;
 
 contract ('GoldmanSachsLendingContract', async accounts => {
 
@@ -60,8 +62,7 @@ contract ('GoldmanSachsLendingContract', async accounts => {
 	});
 
 	it('Lender approve the loan request', async() => {
-		const loanAmount = 500;
-		const lendingContract = await GoldmanSachsLendingContract.new(
+		lendingContract = await GoldmanSachsLendingContract.new(
 			gsnfToken.address, usdcToken.address, 0, loanAmount, 12, 12);
 		await usdcToken.approve(lendingContract.address, loanAmount, {from: lender});
 		await lendingContract.lenderApproveLoanRequest({from: lender});
@@ -70,11 +71,6 @@ contract ('GoldmanSachsLendingContract', async accounts => {
 	});
 
 	it('Borrower take disbursement', async() => {
-		const loanAmount = 500;
-		const lendingContract = await GoldmanSachsLendingContract.new(
-			gsnfToken.address, usdcToken.address, 0, loanAmount, 12, 12);
-		await usdcToken.approve(lendingContract.address, loanAmount, {from: lender});
-		await lendingContract.lenderApproveLoanRequest({from: lender});
 		await gsnfToken.approve(lendingContract.address, 0, {from: borrower});
 		const balanceBeforeLoan = await usdcToken.balanceOf(borrower);
 		await lendingContract.borrowerTakeDisbursement({from: borrower});
@@ -82,6 +78,15 @@ contract ('GoldmanSachsLendingContract', async accounts => {
 		assert(loanStatus == "Loan amount disbursed");
 		const balanceAfterLoan = await usdcToken.balanceOf(borrower);
 		assert((balanceAfterLoan.sub(balanceBeforeLoan)).toNumber() == loanAmount);
+	});
+
+	it('Borrower pay back loan amount to lender', async() => {
+		const loanBalance = await lendingContract.loanBalance();
+		await usdcToken.approve(lendingContract.address, loanBalance, {from: borrower});
+		const balanceBeforePayment = await usdcToken.balanceOf(lender);
+		await lendingContract.payLoanDue({from: borrower});
+		const balanceAfterPayment = await usdcToken.balanceOf(lender);
+		assert((balanceAfterPayment.sub(balanceBeforePayment)).toNumber() == loanAmount);
 	});
 
 });
