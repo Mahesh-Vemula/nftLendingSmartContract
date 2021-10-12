@@ -87,6 +87,8 @@ contract ('GoldmanSachsLendingContract', async accounts => {
 		await lendingContract.payLoanDue({from: borrower});
 		const balanceAfterPayment = await usdcToken.balanceOf(lender);
 		assert((balanceAfterPayment.sub(balanceBeforePayment)).toNumber() == loanAmount);
+		const approvedFor = await gsnfToken.getApproved(0);
+		assert(approvedFor == 0);
 	});
 
 });
