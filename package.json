@@ -1,8 +1,11 @@
 {
-  "name": "gsnftlending",
+  "name": "nftlending",
   "version": "1.0.0",
-  "description": "Goldman Sachs lending by NFT Collateral Smart Contract",
-  "main": "truffle-config.js",
+  "description": "Lending by NFT Collateral Smart Contract",
+  "scripts": {
+    "build1": "truffle compile",
+    "test1": "truffle test"
+  },
   "directories": {
     "test": "test"
   },

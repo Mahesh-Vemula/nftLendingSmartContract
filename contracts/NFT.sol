@@ -9,7 +9,7 @@ contract NFT is ERC721 {
 	mapping(uint256 => uint256) private nftPrices;
 	mapping(uint256 => bool) private nftCollateralStatus;
 
-	constructor ()  ERC721 ("GoldmanSachsNFT", "GSNFT"){
+	constructor ()  ERC721 ("NFT", "GSNFT"){
 		countNFTs = 0;
 	}
 
