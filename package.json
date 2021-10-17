@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "Lending by NFT Collateral Smart Contract",
   "scripts": {
-    "build1": "truffle compile",
-    "test1": "truffle test"
+    "install": "truffle compile",
+    "test": "truffle test"
   },
   "directories": {
     "test": "test"
@@ -14,9 +14,6 @@
     "truffle": "^5.4.15"
   },
   "devDependencies": {},
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "author": "",
   "license": "ISC"
 }
