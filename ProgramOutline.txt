@@ -1,0 +1,24 @@
+Program outline
+
+1. Create Smart Contract (Lender)
+	Add value to smart contract ( minting )
+
+1. Take loan on NFT
+	NFT token address value is provided
+	calculate value of nft
+	borrower transfer ownership to collateral contract
+	lender transfer 70 percent of NFT value to NFT owner
+
+2. Repay loan
+	NFT owner pay loan amount with interest. Transfer value to lender
+	smart contract transfer ownership of NFT to borrower if paid before deadline
+
+3. Liquidation
+	Check if dealine crossed
+		if yes then check user tried to liquidate provide minimum value
+			if yes transfer ownership
+
+
+
+
+
